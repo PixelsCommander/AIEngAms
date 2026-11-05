@@ -1,6 +1,7 @@
+import {GEAR_MESH} from './gear-mesh.mjs';
 // World units: millimetre-like construction dimensions. All stations are
 // anchored to the bed; only the disc, workpiece, gears and tools move.
-export function machineGeometry(k,P,stationAngles){
+export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  const B=(x,y,w,d,z,h,tone='mid',lit=false,a=0)=>{
   const c=Math.cos(a),s=Math.sin(a),ring=[[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([u,v])=>[x+u*c-v*s,y+u*s+v*c]);
   return k.solidSvg(k.extrude(ring,z,h,P),{tone,lit});
@@ -11,43 +12,43 @@ export function machineGeometry(k,P,stationAngles){
  const ring=(x,y,r,z,tone='lo')=>L(k.ring(x,y,r,z,P,80),tone);
  const dot=(x,y,z,size=.5,tone='hi')=>k.dotsSvg([k.iso([x,y,z],P)],{size,tone});
  const screw=(x,y,z)=>ring(x,y,1.25,z,'lo')+dot(x,y,z,.45);
- const local=(i,u,v,z=0)=>{const a=stationAngles[i],c=Math.cos(a),s=Math.sin(a);return [(112+u)*c-v*s,(112+u)*s+v*c,z];};
+ const local=(i,u,v,z=0)=>{const a=stationAngles[i],c=Math.cos(a),s=Math.sin(a);return [(134+u)*c-v*s,(134+u)*s+v*c,z];};
  const b=(i,u,v,w,d,z,h,tone='mid',lit=false)=>{const [x,y]=local(i,u,v);return B(x,y,w,d,z,h,tone,lit,stationAngles[i]);};
  const c=(i,u,v,r,z,h,tone='mid',lit=false)=>{const [x,y]=local(i,u,v);return C(x,y,r,z,h,tone,lit);};
  const bolts=(i,u,v,w,d,z)=>[-1,1].map(j=>[-1,1].map(l=>{const [x,y]=local(i,u+j*w/2,v+l*d/2);return screw(x,y,z);}).join('')).join('');
- function gear(x,y,r,n,angle,z=10){
-  const pts=[];for(let j=0;j<n;j++)for(const [f,rr] of [[-.5,r-1.8],[-.32,r-1.8],[-.18,r+2.1],[.18,r+2.1],[.32,r-1.8]]){const a=(j+f)*Math.PI*2/n+angle;pts.push([x+Math.cos(a)*rr,y+Math.sin(a)*rr]);}
-  let out=k.solidSvg(k.extrude(pts,z,5,P,{convex:false}),{tone:'hi',crease:'none'});
-  for(let j=0;j<3;j++){const a=angle+j*Math.PI*2/3;out+=ring(x+Math.cos(a)*r*.46,y+Math.sin(a)*r*.46,r*.1,z+5,'lo');}
-  return out+plainDisc(x,y,r*.16,z+5,3,'mid');
- }
  const trainAngle=20*Math.PI/180;
- const gearCenters=[[0,0],[99*Math.cos(trainAngle),99*Math.sin(trainAngle)],[135*Math.cos(trainAngle),135*Math.sin(trainAngle)]];
- const idlerPhase=(66*trainAngle+13*Math.PI)/14;
- const gearPhases=[0,idlerPhase,(24*trainAngle+9*Math.PI-14*idlerPhase)/10];
- function gears(model){return [[78,52],[21,14],[15,10]].map(([r,n],i)=>gear(...gearCenters[i],r,n,model.gears[i]+gearPhases[i])).join('');}
+ const gearCenters=[[0,0],[117*Math.cos(trainAngle),117*Math.sin(trainAngle)]];
+ const pinionPhase=(78*trainAngle+13*Math.PI)/14;
+ let profileAngle=null,profileCache;
+ const profiles=angle=>{if(profileAngle!==angle){profileAngle=angle;profileCache=[mesh.profile({teeth:64,angle}),mesh.profile({x:gearCenters[1][0],y:gearCenters[1][1],teeth:14,angle:-angle*64/14+pinionPhase})];}return profileCache;};
+ function gearTop(points){return `<g class="iso-solid"><path class="iso-top" d="${k.pathOf(points.map(([x,y])=>k.iso([x,y,24],P)),true)}"/><path class="iso-line iso-edge" data-tone="hi" d="${k.pathOf(points.map(([x,y])=>k.iso([x,y,24],P)),true)}"/></g>`;}
+ function gearSides(model){return mesh.sides(k,P,profiles(model.angle)).svg;}
+ function gears(model){const [x,y]=gearCenters[1];let s=gearTop(profiles(model.angle)[1]);
+  const angle=model.gears[1]+pinionPhase;for(let j=0;j<3;j++){const a=angle+j*Math.PI*2/3;s+=ring(x+Math.cos(a)*9.66,y+Math.sin(a)*9.66,2.1,24,'lo');}
+  return `<g data-drive-gear="pinion">${s+plainDisc(x,y,3.36,24,3,'mid')}</g>`;}
  function supports(){let s='';
-  s+=C(0,0,41,0,4,'lo')+C(0,0,27,4,6,'mid');
-  for(const [x,y] of gearCenters.slice(1)){s+=B(x,y,25,25,0,5,'lo')+C(x,y,7,5,5,'mid');for(const dx of [-9,9])for(const dy of [-9,9])s+=screw(x+dx,y+dy,5);}
+  s+=C(0,0,41,0,4,'lo')+C(0,0,27,4,6,'mid')+plainDisc(0,0,5,10,8,'mid');
+  const [px,py]=gearCenters[1];s+=B(px,py,25,25,0,3,'lo')+C(px,py,7,3,15,'mid');
   // A compact finned motor and its shaft bearing sit beside the last pinion.
-  const [gx,gy]=gearCenters[2];s+=B(gx+31,gy,22,25,0,18,'mid')+B(gx+31,gy,25,28,18,2,'hi');
-  for(let j=0;j<4;j++)s+=B(gx+24+j*4,gy,1,25,3,15,'lo');
-  s+=B(gx+13.5,gy,13,3,6,3,'hi');
-  s+=C(gx,gy,3.3,5,17,'hi')+C(gx,gy,5,22,2,'mid');
+  const [gx,gy]=gearCenters[1];s+=B(gx+38,gy,22,25,0,18,'mid')+B(gx+38,gy,25,28,18,2,'hi');
+  for(let j=0;j<4;j++)s+=B(gx+31+j*4,gy,1,25,3,15,'lo');
+  s+=B(gx+17,gy,20,3,6,3,'hi');
+
   return s;
  }
- function disc(angle){let s=plainDisc(0,0,76,18,6,'mid');
-  for(let j=0;j<14;j++){const a=angle+j*Math.PI/7,x=Math.cos(a)*71,y=Math.sin(a)*71;s+=dot(x,y,24,.35,j%2?'lo':'mid');}
-  for(let j=0;j<7;j++){const a=angle+j*Math.PI*2/7;s+=dot(Math.cos(a)*37,Math.sin(a)*37,24,.45,'lo');}
-  s+=plainDisc(0,0,5,24,3,'mid');
-  return s;
+ // The turntable and its teeth are one solid with one uninterrupted top.
+ function disc(angle){let s=gearTop(profiles(angle)[0]);
+  for(let j=0;j<14;j++){const a=angle+j*Math.PI/7,x=Math.cos(a)*89,y=Math.sin(a)*89;s+=dot(x,y,24,.35,j%2?'lo':'mid');}
+  return `<g data-drive-gear="main">${s}</g>`;
  }
- function station(i){let s=b(i,0,0,31,31,0,3,'lo');
-  // Outboard twin uprights leave the rotating disc and its carrier unobstructed.
-  for(const v of [-10,10]){s+=c(i,0,v,2.1,3,52,'mid')+c(i,0,v,3.4,48,5,'mid');}
-  s+=b(i,-24,0,61,8,55,6,'hi')+b(i,-5,0,7,26,53,3,'mid');
+ function foundation(i){return `<g data-stage-foundation="${i}" class="stage-frame">${b(i,5,0,23,23,0,3,'lo')}</g>`;}
+ function station(i){let s='';
+  // A single centered mast supports each stationary cantilever arm.
+  s+=`<g data-stage-upright="${i}" class="stage-frame">${c(i,5,0,3.2,3,52,'mid')}</g>`;
+  s+=`<g class="stage-frame">${b(i,-21.5,0,66,8,55,6,'hi')}</g>`;
   // Keep the beam junction open; the stage-specific tool explains the operation.
   s+=c(i,-54,0,5.5,52,3,'mid')+c(i,-54,0,4,61,2,'hi');
+  s+=`<g class="stage-accent" data-stage-accent="${i}">${b(i,6,0,3,6,61,.6,'hi')}</g>`;
   // Distinct fixed attachments belonging to the station's operation.
   if(i===0){for(const v of [-6,6])s+=b(i,-5,v,17,1.6,15,17,'mid');for(let j=0;j<3;j++)s+=b(i,-5,0,13,10,16+j*3,1,'mid');s+=b(i,-23,0,23,5,28,2,'hi');}
   if(i===1){s+=b(i,-54,0,7,27,51,3,'hi');for(const v of [-8,0,8])s+=c(i,-54,v,2.7,54,2,'mid');}
@@ -98,5 +99,5 @@ export function machineGeometry(k,P,stationAngles){
   if(m.completed>=6)s+=C(x,y,2.2,37,.7,'hi',true);
   return s;
  }
- return {supports,gears,disc,station,tool,toolDepth,testWheel,testWheelDepth,workpiece,gearCenters,local};
+ return {supports,gears,gearSides,disc,foundation,station,tool,toolDepth,testWheel,testWheelDepth,workpiece,gearCenters,local};
 }

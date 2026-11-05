@@ -37,7 +37,7 @@ export function nauticalGeometry(k,P,harbors){
   for(const r of [107,128])for(const v of [-9,9])s+=C(r,v,1.6,-5,10,'lo');
   s+=B(117,0,30,24,5,1.5,'mid');
   for(let j=0;j<7;j++)s+=B(104+j*4,0,3.5,23,6.5,.3,'lo');
-  for(const v of [-9,9]){s+=C(105,v,1.2,6.8,2,'hi')+C(105,v,1.8,8.8,.6,'hi');s+=C(101,v,1.7,1,3,'lo');}
+  for(const v of [-9,9]){s+=C(105,v,1.2,6.8,2,'hi')+(v===-9?`<g class="stage-accent" data-stage-accent="${i}">${C(105,v,1.8,8.8,.6,'hi')}</g>`:C(105,v,1.8,8.8,.6,'hi'));s+=C(101,v,1.7,1,3,'lo');}
   // One recognizable piece of working harbor equipment per phase.
   if(i===0){s+=B(123,0,8,13,6.8,8,'mid')+B(121,0,11,15,14.8,.8,'hi');s+=B(120,0,7,10,15.6,.3,'lo');}
   if(i===1){s+=B(121,0,12,14,6.8,1.5,'mid');for(let j=0;j<3;j++)s+=B(121,-4+j*4,8,2.5,8.3,2,'hi');}

@@ -23,7 +23,7 @@ export function cycleState(seconds){
  const stroke=working?(stage===4?(1-Math.cos(testRotation))/2:Math.sin(Math.PI*phase/4.5)**2):0;
  const completed=phase>=2.25?stage:stage-1;
  return {seconds,stage,phase,travel,angle,stroke,working,completed,testRotation,
-  point:[58*Math.cos(angle),58*Math.sin(angle)],
+  point:[80*Math.cos(angle),80*Math.sin(angle)],
   status:working?(stroke>.75?'working':phase<2.25?'lowering tool':'retracting tool'):'indexing disc',
-  gears:[angle,-angle*52/14,angle*52/10]};
+  gears:[angle,-angle*64/14]};
 }
