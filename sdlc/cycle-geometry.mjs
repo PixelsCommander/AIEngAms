@@ -29,11 +29,6 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  function supports(){let s='';
   s+=C(0,0,41,0,4,'lo')+C(0,0,27,4,6,'mid')+plainDisc(0,0,5,10,8,'mid');
   const [px,py]=gearCenters[1];s+=B(px,py,25,25,0,3,'lo')+C(px,py,7,3,15,'mid');
-  // A compact finned motor and its shaft bearing sit beside the last pinion.
-  const [gx,gy]=gearCenters[1];s+=B(gx+38,gy,22,25,0,18,'mid')+B(gx+38,gy,25,28,18,2,'hi');
-  for(let j=0;j<4;j++)s+=B(gx+31+j*4,gy,1,25,3,15,'lo');
-  s+=B(gx+17,gy,20,3,6,3,'hi');
-
   return s;
  }
  // The turntable and its teeth are one solid with one uninterrupted top.
