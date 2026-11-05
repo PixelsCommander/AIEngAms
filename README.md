@@ -21,8 +21,9 @@ Landing diagram variants:
 - `index-sdlc-boat.html`: animated sailing boat SDLC scene.
 
 Both preserve the original `index.html`. Rebuild them after editing the landing or
-illustrations with `node scripts/build-landing-variants.mjs`. The builder generates
-isolated SVG embed pages at `sdlc/landing.html` and `sdlc-boat/landing.html`;
-`css/landing-variants.css` handles the surrounding responsive layout. Stage labels
+illustrations with `node scripts/build-landing-variants.mjs`. The builder embeds each SVG scene and its animation directly in the corresponding
+landing HTML using an isolated `srcdoc` frame. It reads the standalone illustrations
+without rebuilding or modifying either folder. `css/landing-variants.css` handles
+the surrounding responsive layout. Stage labels
 remain interactive; focus the scene and use arrow keys to select a stage or Space
 to pause. Reduced motion displays a still scene.
