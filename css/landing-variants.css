@@ -1,0 +1,39 @@
+/* Alternative SDLC scenes: the original landing remains unchanged. */
+.the-event-section {
+  display: grid;
+  grid-template-columns: minmax(0, 46%) minmax(0, 54%);
+  align-items: center;
+  padding: 64px 32px 56px 64px;
+}
+.the-event-div {
+  padding: 0;
+  max-width: 640px;
+}
+.the-event-p { font-size: clamp(36px, 3.89vw, 56px); }
+.the-event-div-2 {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+}
+.landing-cycle { display: block; width: 100%; border: 0; background: #181714; }
+.the-event-div-3 { display: none; }
+.landing-sdlc .landing-cycle { margin-top: 64px; }
+@media (max-width: 1000px) {
+  .the-event-section { grid-template-columns: 1fr; gap: 24px; padding: 48px 24px 32px; }
+  .the-event-div { max-width: 720px; }
+  .the-event-div-2 { max-width: 780px; justify-self: center; }
+}
+@media (max-width: 480px) {
+  .the-event-section { padding: 36px 16px 24px; gap: 20px; }
+  .the-event-p { font-size: 34px; }
+}
+/* Add 32px to the boat scene height through proportional width growth. */
+.landing-sdlc-boat .landing-cycle {
+  width: calc(100% + 49.5094px); /* 32 × 820 / 530 */
+  transform: translateX(-64px);
+}
+@media (max-width: 1000px) {
+  .landing-sdlc-boat .landing-cycle { width: 100%; transform: none; }
+}
