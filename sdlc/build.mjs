@@ -17,17 +17,18 @@ const P=k.fitProjection(k.boxCorners({x:-145,y:-145,w:320,d:290},-19,82),W,H,{pa
 const G=machineGeometry(k,P,stationAngles),initial=cycleState(0);
 const depths=stationAngles.map((a,i)=>k.depthOf(G.local(i,5,0,28),P));
 const order=stationAngles.map((_,i)=>i).sort((a,b)=>depths[a]-depths[b]);
-// Station frames and inward-reaching tools occupy different depths. Keep
-// them as separate render items so the carrier can pass beneath each tool.
+// Interleave fixed and moving solids within each station assembly. Empty tool
+// slots retain the existing click/navigation hooks and carrier ordering.
 const stationItems=order.flatMap(i=>[
- {depth:depths[i],svg:`<g data-station="${i}" data-fixed="true" class="machine-station"><title>${stages[i][0]} — ${stages[i][1]}</title><g class="station-body">${G.station(i)}</g></g>`},
- {depth:G.toolDepth(i,initial),svg:`<g data-tool="${i}" class="machine-tool">${G.tool(i,initial)}</g>`}
+ {depth:depths[i],svg:`<g data-station="${i}" data-fixed="true" class="machine-station"><title>${stages[i][0]} — ${stages[i][1]}</title><g class="station-body">${G.assembly(i,initial)}</g></g>`},
+ {depth:G.toolDepth(i,initial),svg:`<g data-tool="${i}" class="machine-tool"></g>`}
 ]);
 stationItems.push({depth:G.testWheelDepth(),svg:`<g id="test-wheel" data-test-wheel>${G.testWheel(initial)}</g>`});
-stationItems.push({depth:k.depthOf([...initial.point,29],P),svg:`<g id="workpiece">${G.workpiece(initial)}</g>`});
+// The carrier stays above the turntable and below every station assembly.
+const workpiece=`<g id="workpiece">${G.workpiece(initial)}</g>`;
 stationItems.sort((a,b)=>a.depth-b.depth);
 const stations=stationItems.map(item=>item.svg).join('');
-const svg=k.figureSvg({width:W,height:H,label:'An isometric rotary SDLC machine. Seven stationary machines surround a rotating work disc. Two meshing gears drive one carrier through planning, requirements, design, implementation, testing, deployment, and maintenance.',body:[G.supports(),`<g id="foundations">${order.map(i=>G.foundation(i)).join('')}</g>`,`<g id="drive-train"><g id="gear-sides">${G.gearSides(initial)}</g><g id="disc">${G.disc(initial.angle)}</g><g id="gears" data-gear-count="2">${G.gears(initial)}</g></g>`,`<g id="station-layer">${stations}</g>`]});
+const svg=k.figureSvg({width:W,height:H,label:'An isometric rotary SDLC machine. Seven stationary machines surround a rotating work disc. Two meshing gears drive one carrier through planning, requirements, design, implementation, testing, deployment, and maintenance.',body:[G.supports(),`<g id="foundations">${order.map(i=>G.foundation(i)).join('')}</g>`,`<g id="drive-train"><g id="gear-sides">${G.gearSides(initial)}</g><g id="disc">${G.disc(initial.angle)}</g><g id="gears" data-gear-count="2">${G.gears(initial)}</g></g>`,workpiece,`<g id="station-layer">${stations}</g>`]});
 const labelPositions=[[41.4,19.8],[57.5,21],[77,44.8],[75,62.5],[47.1,81],[22,63],[20,43.5]];
 const labelNames=['Planning','Requirements','Design','Implementation','Testing','Deployment','Maintenance'];
 const stageLabels=stages.map((s,i)=>`<button class="station-label" data-stage-label="${i}" aria-pressed="${i===0}" style="left:${labelPositions[i][0]}%;top:${labelPositions[i][1]}%"><span>0${i+1}</span> ${labelNames[i]}</button>`).join('');
@@ -48,8 +49,8 @@ function updateText(m){
  const mod=((seconds%49)+49)%49;els.slider.value=mod;els.slider.setAttribute('aria-valuetext',s[0]+', '+m.status);document.querySelector('#position').textContent=Math.round(((m.angle-START)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)*180/Math.PI)+'°';
  els.play.textContent=playing?'Pause machine':'Run machine';els.play.setAttribute('aria-pressed',String(playing));root.dataset.stage=m.stage;root.dataset.status=m.status;root.dataset.angle=m.angle.toFixed(5);root.dataset.stroke=m.stroke.toFixed(4);
 }
-function paint(){const m=cycleState(seconds);if(renderedDriveAngle!==m.angle){els.gearSides.innerHTML=G.gearSides(m);els.disc.innerHTML=G.disc(m.angle);els.gears.innerHTML=G.gears(m);renderedDriveAngle=m.angle;}els.work.innerHTML=G.workpiece(m);els.testWheel.innerHTML=G.testWheel(m);els.testWheel.dataset.rotation=m.testRotation.toFixed(5);tools.forEach(el=>{const i=Number(el.dataset.tool);el.innerHTML=G.tool(i,m);});
- const items=[...bodies.map(el=>({el,key:'body'+el.dataset.station,depth:stationDepths[Number(el.dataset.station)]})),...tools.map(el=>({el,key:'tool'+el.dataset.tool,depth:G.toolDepth(Number(el.dataset.tool),m)})),{el:els.testWheel,key:'test-wheel',depth:G.testWheelDepth()},{el:els.work,key:'workpiece',depth:depthOf([...m.point,29],P)}].sort((a,b)=>a.depth-b.depth);
+function paint(){const m=cycleState(seconds);if(renderedDriveAngle!==m.angle){els.gearSides.innerHTML=G.gearSides(m);els.disc.innerHTML=G.disc(m.angle);els.gears.innerHTML=G.gears(m);renderedDriveAngle=m.angle;}els.work.innerHTML=G.workpiece(m);els.testWheel.innerHTML=G.testWheel(m);els.testWheel.dataset.rotation=m.testRotation.toFixed(5);tools.forEach(el=>{const i=Number(el.dataset.tool);el.innerHTML='';bodies.find(body=>Number(body.dataset.station)===i).querySelector('.station-body').innerHTML=G.assembly(i,m);});
+ const items=[...bodies.map(el=>({el,key:'body'+el.dataset.station,depth:stationDepths[Number(el.dataset.station)]})),...tools.map(el=>({el,key:'tool'+el.dataset.tool,depth:G.toolDepth(Number(el.dataset.tool),m)})),{el:els.testWheel,key:'test-wheel',depth:G.testWheelDepth()}].sort((a,b)=>a.depth-b.depth);
  const signature=items.map(item=>item.key).join(',');if(signature!==sceneOrder){els.layer.append(...items.map(item=>item.el));sceneOrder=signature;}updateText(m);}
 function tick(now){frame=0;if(!visible||document.hidden)return;const dt=last?Math.min((now-last)/1000,.05):0;last=now;
  if(target!==null){seconds=reduce.matches?target:seconds+(target-seconds)*(1-Math.exp(-dt/0.42));if(Math.abs(seconds-target)<.002){seconds=target;target=null;}}
