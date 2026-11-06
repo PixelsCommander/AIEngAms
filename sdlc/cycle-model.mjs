@@ -20,9 +20,10 @@ export function cycleState(seconds){
  const working=phase<4.5;
  const testProgress=Math.min(phase/4.5,1);
  const testRotation=stage===4?Math.PI*2*testProgress*testProgress*(3-2*testProgress):0;
+ const implementRotation=stage===3?Math.PI*4*testProgress*testProgress*(3-2*testProgress):0;
  const stroke=working?(stage===4?(1-Math.cos(testRotation))/2:Math.sin(Math.PI*phase/4.5)**2):0;
  const completed=phase>=2.25?stage:stage-1;
- return {seconds,stage,phase,travel,angle,stroke,working,completed,testRotation,
+ return {seconds,stage,phase,travel,angle,stroke,working,completed,testRotation,implementRotation,
   point:[80*Math.cos(angle),80*Math.sin(angle)],
   status:working?(stroke>.75?'working':phase<2.25?'lowering tool':'retracting tool'):'indexing disc',
   gears:[angle,-angle*64/14]};

@@ -11,7 +11,7 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  };
  function assembly(i,m){
   parts=[];
-  const markup=station(i)+tool(i,m),items=parts;parts=null;
+  const markup=station(i,m)+tool(i,m),items=parts;parts=null;
   // Preserve each solid's material while allowing fixed and moving parts to interleave.
   const stack=[];
   for(const token of markup.matchAll(/<g\b[^>]*>|<\/g>|<!--part:(\d+)-->/g)){
@@ -98,7 +98,7 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
   return `<g data-drive-gear="main">${s}</g>`;
  }
  function foundation(i){return `<g data-stage-foundation="${i}" class="stage-frame">${b(i,5,0,23,23,0,3,'lo')}</g>`;}
- function station(i){let s='';
+ function station(i,m={implementRotation:0}){let s='';
   // A single centered mast supports each stationary cantilever arm.
   s+=`<g data-stage-upright="${i}" class="stage-frame">${c(i,5,0,3.2,3,52,'mid')}</g>`;
   s+=`<g class="stage-frame">${b(i,-21.5,0,66,8,55,6,'hi')}</g>`;
@@ -109,7 +109,10 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
   if(i===0){for(const v of [-6,6])s+=b(i,-5,v,17,1.6,15,17,'mid');for(let j=0;j<3;j++)s+=b(i,-5,0,13,10,16+j*3,1,'mid');s+=b(i,-23,0,23,5,28,2,'hi');}
   if(i===1){s+=b(i,-54,0,7,27,51,3,'hi');for(const v of [-8,0,8])s+=c(i,-54,v,2.7,54,2,'mid');}
   if(i===2){for(const v of [-10,10])s+=b(i,-49,v,21,2,48,2,'hi');for(let j=0;j<3;j++)s+=c(i,-58+j*6,-10,.6,50,.7,'lo');s+=b(i,-54,0,2,23,50,2,'hi');}
-  if(i===3){s+=b(i,-45,0,13,24,58,3,'hi');for(const v of [-9,9])s+=c(i,-54,v,1.3,38,17,'hi')+c(i,-54,v,2.2,51,3,'mid');s+=c(i,-40,0,7,61,3,'hi');}
+  if(i===3){s+=b(i,-45,0,13,24,58,3,'hi');for(const v of [-9,9])s+=c(i,-54,v,1.3,38,17,'hi')+c(i,-54,v,2.2,51,3,'mid');s+=c(i,-40,0,7,61,3,'hi');
+   const angle=m.implementRotation??0;
+   s+=`<g data-press-rotation="${angle.toFixed(5)}">${c(i,-40+Math.cos(angle)*4.3,Math.sin(angle)*4.3,1.3,64,2.2,'hi')}</g>`;
+  }
   if(i===4)s+=b(i,-29,7,4,15,55,2,'mid');
   if(i===5){for(const v of [-11,11])s+=b(i,-54,v,16,3,47,6,'hi')+c(i,-54,v,2,53,2,'mid');s+=b(i,-8,0,16,14,14,3,'lo');for(let j=0;j<3;j++)s+=b(i,-8,0,11,10,17+j*2,1,'hi');}
   if(i===6)s+=b(i,-25,8,14,10,38,11,'mid');
