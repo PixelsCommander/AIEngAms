@@ -86,12 +86,47 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  function gearSides(model){return mesh.sides(k,P,profiles(model.angle)).svg;}
  function gears(model){const [x,y]=gearCenters[1];let s=gearTop(profiles(model.angle)[1]);
   const angle=model.gears[1]+pinionPhase;for(let j=0;j<3;j++){const a=angle+j*Math.PI*2/3;s+=ring(x+Math.cos(a)*9.66,y+Math.sin(a)*9.66,2.1,24,'lo');}
-  return `<g data-drive-gear="pinion">${s+plainDisc(x,y,3.36,24,3,'mid')}</g>`;}
- function supports(){let s='';
-  s+=C(0,0,41,0,4,'lo')+C(0,0,27,4,6,'mid')+plainDisc(0,0,5,10,8,'mid');
-  const [px,py]=gearCenters[1];s+=B(px,py,25,25,0,3,'lo')+C(px,py,7,3,15,'mid');
-  return s;
+  return `<g data-drive-gear="pinion"><title>Leadership drive gear</title>${s+plainDisc(x,y,3.36,24,3,'mid')}</g>`;}
+ function engine(model){
+  const [x,y]=gearCenters[1],t=(model.engineTime??model.angle)*.3;
+  let s='';
+  // A cast motor enclosure, seated on four feet, drives the pinion above.
+  for(const dx of [-12,12])for(const dy of [-12,12])s+=B(x+dx,y+dy,8,8,-24,3,'lo');
+  s+=B(x,y,36,34,-21,3,'mid')+B(x,y,32,30,-18,29,'mid')+B(x,y,35,33,11,2,'hi');
+  s+=C(x,y,8,13,3,'lo')+plainDisc(x,y,4,16,2,'mid');
+  for(const dx of [-13,13])for(const dy of [-12,12])s+=screw(x+dx,y+dy,13);
+  s=`<g class="engine-housing">${s}</g>`;
+  // Each visible face gets a full-height instrument panel in its own plane.
+  const faces=[(u,z)=>k.iso([x+16.05,y+u,z],P),(u,z)=>k.iso([x+u,y+15.05,z],P)];
+  for(let side=0;side<2;side++){
+   const face=faces[side],path=points=>k.pathOf(points.map(([u,z])=>face(u,z)));
+   s+=`<path class="engine-panel" d="${path([[-13,-17],[13,-17],[13,10],[-13,10]])}Z"/>`;
+   s+=`<g class="engine-indicators" data-engine-instrument="${side?'bars':'gauges'}">`;
+   for(const u of [-11.7,11.7])for(const z of [-15.7,8.7])s+=k.dotsSvg([face(u,z)],{size:.4,tone:'mid'});
+   if(side===0){
+    for(let j=0;j<2;j++){
+     const u=0,z=3-j*13,r=5.6;
+     const circle=radius=>Array.from({length:65},(_,i)=>[u+radius*Math.cos(i*Math.PI/32),z+radius*Math.sin(i*Math.PI/32)]);
+     s+=L(path(circle(r)),'hi')+L(path(circle(r-.65)),'mid');
+     for(let n=0;n<9;n++){const a=.2+n*2.74/8;s+=L(path([[u+Math.cos(a)*4,z+Math.sin(a)*4],[u+Math.cos(a)*4.95,z+Math.sin(a)*4.95]]),'hi');}
+     const a=.3+(0.5+0.4*Math.sin(t*3+j*1.7))*2.5;
+     s+=`<g class="stage-accent">${L(path([[u,z],[u+Math.cos(a)*4.3,z+Math.sin(a)*4.3]]),'hi')}</g>`;
+     s+=k.dotsSvg([face(u,z)],{size:.75,tone:'hi'});
+    }
+   }else{
+    for(let j=0;j<5;j++){
+     const u=-8+j*4,level=.35+.6*(.5+.5*Math.sin(t*4+j*.9));
+     s+=L(path([[u,-13],[u,7]]),'mid');
+     s+=`<path class="engine-bar" d="${path([[u,-13],[u,-13+20*level]])}"/>`;
+    }
+    s+=L(path([[-10,-13],[10,-13]]),'hi');
+    for(let j=0;j<5;j++)s+=L(path([[-11,-13+j*5],[-10,-13+j*5]]),'hi');
+   }
+   s+='</g>';
+  }
+  return `<g class="leadership-engine"><title>Leadership engine — animated gauges and load indicators</title>${s}</g>`;
  }
+ function supports(){return C(0,0,41,0,4,'lo')+C(0,0,27,4,6,'mid')+plainDisc(0,0,5,10,8,'mid');}
  // The turntable and its teeth are one solid with one uninterrupted top.
  function disc(angle){let s=gearTop(profiles(angle)[0]);
   for(let j=0;j<14;j++){const a=angle+j*Math.PI/7,x=Math.cos(a)*89,y=Math.sin(a)*89;s+=dot(x,y,24,.35,j%2?'lo':'mid');}
@@ -163,5 +198,5 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
   if(m.completed>=6)s+=C(x,y,2.2,37,.7,'hi',true);
   return s;
  }
- return {assembly,supports,gears,gearSides,disc,foundation,station,tool,toolDepth,testWheel,testWheelDepth,workpiece,gearCenters,local};
+ return {assembly,supports,engine,gears,gearSides,disc,foundation,station,tool,toolDepth,testWheel,testWheelDepth,workpiece,gearCenters,local};
 }
