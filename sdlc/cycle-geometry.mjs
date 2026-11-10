@@ -65,14 +65,14 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  }
  const B=(x,y,w,d,z,h,tone='mid',lit=false,a=0)=>{
   const c=Math.cos(a),s=Math.sin(a),ring=[[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([u,v])=>[x+u*c-v*s,y+u*s+v*c]);
-  return record(k.solidSvg(k.extrude(ring,z,h,P),{tone,lit}),ring.flatMap(([x,y])=>[[x,y,z],[x,y,z+h]]));
+  return record(k.solidSvg(k.extrude(ring,z,h,P),{tone,lit,crease:'none'}),ring.flatMap(([x,y])=>[[x,y,z],[x,y,z+h]]));
  };
- const C=(x,y,r,z,h,tone='mid',lit=false)=>record(k.solidSvg(k.cylinder(x,y,r,z,h,P,48,.35),{tone,lit}),Array.from({length:48},(_,j)=>{const a=j*Math.PI/24;return [[x+Math.cos(a)*r,y+Math.sin(a)*r,z],[x+Math.cos(a)*r,y+Math.sin(a)*r,z+h]];}).flat());
+ const C=(x,y,r,z,h,tone='mid',lit=false)=>record(k.solidSvg(k.cylinder(x,y,r,z,h,P,48,0),{tone,lit,crease:'none'}),Array.from({length:48},(_,j)=>{const a=j*Math.PI/24;return [[x+Math.cos(a)*r,y+Math.sin(a)*r,z],[x+Math.cos(a)*r,y+Math.sin(a)*r,z+h]];}).flat());
  const plainDisc=(x,y,r,z,h,tone='mid')=>k.solidSvg(k.cylinder(x,y,r,z,h,P,48,0),{tone,crease:'none'});
  const L=(d,tone='lo')=>k.lineSvg(d,{tone});
  const ring=(x,y,r,z,tone='lo')=>record(L(k.ring(x,y,r,z,P,80),tone),[[x-r,y-r,z],[x+r,y+r,z]]);
  const dot=(x,y,z,size=.5,tone='hi')=>k.dotsSvg([k.iso([x,y,z],P)],{size,tone});
- const screw=(x,y,z)=>ring(x,y,1.25,z,'lo')+dot(x,y,z,.45);
+ const screw=(x,y,z)=>dot(x,y,z,.6,'lo');
  const local=(i,u,v,z=0)=>{const a=stationAngles[i],c=Math.cos(a),s=Math.sin(a);return [(134+u)*c-v*s,(134+u)*s+v*c,z];};
  const b=(i,u,v,w,d,z,h,tone='mid',lit=false)=>{const [x,y]=local(i,u,v);return B(x,y,w,d,z,h,tone,lit,stationAngles[i]);};
  const c=(i,u,v,r,z,h,tone='mid',lit=false)=>{const [x,y]=local(i,u,v);return C(x,y,r,z,h,tone,lit);};
@@ -107,20 +107,20 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
     for(let j=0;j<2;j++){
      const u=0,z=3-j*13,r=5.6;
      const circle=radius=>Array.from({length:65},(_,i)=>[u+radius*Math.cos(i*Math.PI/32),z+radius*Math.sin(i*Math.PI/32)]);
-     s+=L(path(circle(r)),'hi')+L(path(circle(r-.65)),'mid');
-     for(let n=0;n<9;n++){const a=.2+n*2.74/8;s+=L(path([[u+Math.cos(a)*4,z+Math.sin(a)*4],[u+Math.cos(a)*4.95,z+Math.sin(a)*4.95]]),'hi');}
+     s+=L(path(circle(r)),'mid');
+     for(let n=0;n<5;n++){const a=.2+n*2.74/4;s+=L(path([[u+Math.cos(a)*4,z+Math.sin(a)*4],[u+Math.cos(a)*4.95,z+Math.sin(a)*4.95]]),'hi');}
      const a=.3+(0.5+0.4*Math.sin(t*3+j*1.7))*2.5;
      s+=`<g class="stage-accent">${L(path([[u,z],[u+Math.cos(a)*4.3,z+Math.sin(a)*4.3]]),'hi')}</g>`;
      s+=k.dotsSvg([face(u,z)],{size:.75,tone:'hi'});
     }
    }else{
-    for(let j=0;j<5;j++){
-     const u=-8+j*4,level=.35+.6*(.5+.5*Math.sin(t*4+j*.9));
+    for(let j=0;j<3;j++){
+     const u=-7+j*7,level=.35+.6*(.5+.5*Math.sin(t*4+j*.9));
      s+=L(path([[u,-13],[u,7]]),'mid');
      s+=`<path class="engine-bar" d="${path([[u,-13],[u,-13+20*level]])}"/>`;
     }
     s+=L(path([[-10,-13],[10,-13]]),'hi');
-    for(let j=0;j<5;j++)s+=L(path([[-11,-13+j*5],[-10,-13+j*5]]),'hi');
+
    }
    s+='</g>';
   }
@@ -129,7 +129,6 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  function supports(){return C(0,0,41,0,4,'lo')+C(0,0,27,4,6,'mid')+plainDisc(0,0,5,10,8,'mid');}
  // The turntable and its teeth are one solid with one uninterrupted top.
  function disc(angle){let s=gearTop(profiles(angle)[0]);
-  for(let j=0;j<14;j++){const a=angle+j*Math.PI/7,x=Math.cos(a)*89,y=Math.sin(a)*89;s+=dot(x,y,24,.35,j%2?'lo':'mid');}
   return `<g data-drive-gear="main">${s}</g>`;
  }
  function foundation(i){return `<g data-stage-foundation="${i}" class="stage-frame">${b(i,5,0,23,23,0,3,'lo')}</g>`;}
@@ -163,7 +162,7 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
   if(i===0){s+=b(i,-54,0,10,14,z+2,3,'hi');for(const v of [-6,6])s+=b(i,-54,v,8,2,z,4,'hi',i===m.stage);}
   // Split the gauge rods at the crossbar faces: no whole rod can switch
   // painter order across the rectangular part it passes through.
-  if(i===1){for(const v of [-6,0,6]){s+=c(i,-54,v,.7,z,3,'hi',i===m.stage)+c(i,-54,v,.7,z+5,51-(z+5),'hi',i===m.stage);for(let j=0;j<3;j++)s+=c(i,-54,v,1.5,49+j*1.4,.5,'mid');}s+=b(i,-54,0,4,19,z+3,2,'mid');}
+  if(i===1){for(const v of [-6,0,6]){s+=c(i,-54,v,.7,z,3,'hi',i===m.stage)+c(i,-54,v,.7,z+5,51-(z+5),'hi',i===m.stage);s+=c(i,-54,v,1.5,49,2.8,'mid');}s+=b(i,-54,0,4,19,z+3,2,'mid');}
   if(i===2){const shift=i===m.stage?Math.sin(m.phase*2)*3:0;s+=b(i,-54,shift,6,7,z+3,4,'hi')+c(i,-54,shift,.65,z,3,'hi',i===m.stage);}
   if(i===3){s+=b(i,-54,0,13,23,z+3,4,'hi')+b(i,-54,0,12,13,z,3,'hi',i===m.stage);for(const v of [-9,9])s+=c(i,-54,v,2.5,z+3,4,'mid');}
   if(i===4)s+=c(i,-54,0,3,z+3,5,'mid')+c(i,-54,0,.8,z,3,'hi',i===m.stage);
@@ -175,7 +174,7 @@ export function machineGeometry(k,P,stationAngles,mesh=GEAR_MESH){
  // out than the probe, so it must not inherit the probe's painter order.
  function testWheelDepth(){return k.depthOf(local(4,-29,11,45),P);}
  function testWheel(m){const [x,y]=local(4,-29,11),a=m.testRotation,p=[x+Math.cos(a)*4.5,y+Math.sin(a)*4.5];
-  let s=C(x,y,8,40,4,'hi')+ring(x,y,7.2,44,'lo')+plainDisc(x,y,6.6,44,.6,'mid');
+  let s=C(x,y,8,40,4,'hi')+plainDisc(x,y,6.6,44,.6,'mid');
   for(const offset of [Math.PI*2/3,Math.PI*4/3])s+=ring(x+Math.cos(a+offset)*4.5,y+Math.sin(a+offset)*4.5,1,44.6,'lo');
   s+=L(k.pathOf([k.iso([x,y,44.65],P),k.iso([...p,44.65],P)]),'hi')+dot(x,y,44.65,.3)+dot(...p,44.65,.3);
   s+=C(x,y,1.3,44.6,.8,'hi')+C(x,y,.65,45.4,9.6,'mid');
