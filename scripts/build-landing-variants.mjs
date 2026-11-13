@@ -10,7 +10,8 @@ for(const variant of ['sdlc','sdlc-boat']){
   // Crop unused projection margins; preserve the SVG's isometric proportions.
   const crop=boat?{x:215,y:205,w:665,h:420}:{x:225,y:120,w:670,h:490};
   const embedCss=`<style>
-html,body{margin:0;overflow:hidden;background:#181714}
+html,body{margin:0;overflow:hidden;background:${boat?'#181714':'transparent'}}
+${boat?'':'html{color-scheme:normal}'}
 body.iso{--anatomy-page:#181714;--anatomy-card:#181714;--anatomy-paper:#181714}
 .iso-page{position:absolute;width:${1120/crop.w*100}vw;max-width:none;margin:0;left:${-crop.x/crop.w*100}vw;top:${-crop.y/crop.w*100}vw}
 .iso-plate{padding:0;background:transparent}.controls{display:none}
